@@ -6,8 +6,8 @@ import json
 import numpy
 
 def _argparse():
-    parser = argparse.ArgumentParser(description="")
-    parser.add_argument('--port', action='',required=True, dest='port', help='port')
+    parser = argparse.ArgumentParser(description="A")
+    parser.add_argument('--port', action='store',required=True, dest='port', help='port')
 
     return parser.parse_args()
 
@@ -15,9 +15,11 @@ def get_time():
     return{'command': 'time', 'feedback': time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(time.time()))}
 
 def get_name():
-    return{'command': 'name', 'feedback': 'Jin'}
+    return{'command': 'name', 'feedback': 'Alice'}
 
-protocol_command={'time':get_time(),'name':get_name()}
+protocol_command = {'time': get_time,
+                    'name': get_name
+                    }
 
 def main():
     parser = _argparse()
@@ -26,7 +28,7 @@ def main():
     server_port = port
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.bind(('',server_port))
-    server_socket.listen(2)
+    server_socket.listen(10)
 
     while True:
         connection_socket, client_addr = server_socket.accept()
@@ -43,7 +45,7 @@ def main():
         else:
             feedback_msg = {'command': '', 'feedback': '400'}
 
-            connection_socket.send(json.dumps(feedback_msg).encode())
+        connection_socket.send(json.dumps(feedback_msg).encode())
 
 if __name__ == '__main__':
     main()
