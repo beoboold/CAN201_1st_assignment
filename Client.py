@@ -16,24 +16,33 @@ import zlib
 import zipfile
 import time
 
-server_ip = '127.0.0.1'
-server_port = 20000
-buffer_size = 1024
 
-client_socket = socket(AF_INET, SOCK_STREAM)
-client_socket.connect((server_ip, server_port))
+def main():
+    server_ip = '127.0.0.1'
+    server_port = 20000
+    buffer_size = 10240 #10bk
 
-with open('xjtlu.jpg','rb') as fid:
-    image_bin = fid.read()
-    print('Finished convert to binary')
+    client_socket = socket(AF_INET, SOCK_STREAM)
+    client_socket.connect((server_ip, server_port))
 
-client_socket.send(image_bin)
-print('Client sent image to server')
-print('Client wait for server response')
-image_bin_rec = client_socket.recv(buffer_size)
-if image_bin_rec:
-    print('Server sent image')
-    with open('xjtlu2.jpg','wb') as fid:
-        fid.write(image_bin_rec)
+    with open('xjtlu.jpg','rb') as fid:
+        image_bin = fid.read()
+        print('Finished convert to binary')
 
-client_socket.close()
+    client_socket.send(image_bin)
+    print('Client sent image to server')
+    print('Client wait for server response')
+    image_bin_rec = client_socket.recv(buffer_size)
+    if image_bin_rec:
+        print('Server sent image')
+        with open('xjtlu2.jpg','wb') as fid:
+            fid.write(image_bin_rec)
+        print('Received well, Socket close')
+        client_socket.close()
+    else:
+        print('Receive error')
+        print('Socket close')
+        client_socket.close()
+
+if __name__ == '__main__':
+    main()
