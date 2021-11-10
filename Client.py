@@ -1,22 +1,39 @@
 # Client side
 
-import argparse
-import time
+import os
+import sys
 from socket import *
-import json
+import shutil
+import struct
+import hashlib
+import math
+#import tqdm
 import numpy
+import threading
+import multiprocessing
+import gzip
+import zlib
+import zipfile
+import time
 
-print("python3 main.py --ip ")
-start = input();
+server_ip = '127.0.0.1'
+server_port = 20000
+buffer_size = 1024
 
-serverName = start
-serverPort = 12000
-bufferSize = 1024
-clientSocket = socket(AF_INET, SOCK_STREAM)
-clientSocket.connect((serverName,serverPort))
+client_socket = socket(AF_INET, SOCK_STREAM)
+client_socket.connect((server_ip, server_port))
 
-data,addr = clientSocket.recvfrom(bufferSize)
-if data :
-    print(data.decode())
-else:
-    print("Connection lost")
+with open('xjtlu.jpg','rb') as fid:
+    image_bin = fid.read()
+    print('Finished convert to binary')
+
+client_socket.send(image_bin)
+print('Client sent image to server')
+print('Client wait for server response')
+image_bin_rec = client_socket.recv(buffer_size)
+if image_bin_rec:
+    print('Server sent image')
+    with open('xjtlu2.jpg','wb') as fid:
+        fid.write(image_bin_rec)
+
+client_socket.close()
