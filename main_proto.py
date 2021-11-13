@@ -1,10 +1,11 @@
+import gzip
+import os
 import socket
 from socket import *
 from tqdm import *
 
 port = 20000
 buffer_size = 1024
-data_format = "utf-8"
 
 def main():
     serverSoc = socket(AF_INET, SOCK_STREAM)
@@ -15,29 +16,36 @@ def main():
     connectSoc, clientAddr = serverSoc.accept()
     print("Client connected from ",clientAddr)
 
-    data = connectSoc.recv(buffer_size).decode(data_format)
-    item = data.split("_")
+    recv_data = connectSoc.recv(buffer_size).decode()
+    item = recv_data.split("/")
     filename = item[0]
     filesize = int(item[1])
 
-    print("File data received.")
-    connectSoc.send("File data received".encode(data_format))
+    print("File information received.")
+    connectSoc.send("File information received".encode())
 
-    bar = tqdm(range(filesize), f"sending {filename}", unit="B", unit_scale=True, unit_divisor=buffer_size)
+    bar = tqdm(range(filesize), ('Receiving '+filename), unit="B", unit_scale=True, unit_divisor=buffer_size)
+    #f"Receiving {filename}"
 
-    with open(f"recv_{filename}", 'wb') as fid:
+    with open("recv_"+filename+'.gz', 'wb') as fid:
         while True:
-            data = connectSoc.recv(buffer_size)
+            recv_Bdata = connectSoc.recv(buffer_size)
 
-            if not data:
+            if not recv_Bdata:
                 break
 
-            fid.write(data)
-            connectSoc.send("Data received".encode(data_format))
+            fid.write(recv_Bdata)
+            #connectSoc.send("Data received".encode())
 
-            bar.update(len(data))
+            bar.update(len(recv_Bdata))
+        print('Finish file transfer')
 
+    with gzip.open("recv_"+filename+'.gz', 'rb') as fid:
+        read_data = fid.read()
+        with open("recv_"+filename, 'wb') as f:
+            f.write(read_data)
     connectSoc.close()
+    os.remove("recv_" + filename + '.gz')
     serverSoc.close()
 
 if __name__ == "__main__":
