@@ -5,32 +5,27 @@ from socket import *
 from tqdm import *
 import json
 import argparse
-import server_proto
 
 #os.path.abspath
 #os.path.join
 #Create transferFile def
-
 #port = 20000
 buffer_size = 20480
 
 def _argparse():
-    parser = argparse.ArgumentParser(description='A')
-    parser.add_argument('--ip', action='store', required=True,dest='ip',help='ip address')
-    parser.add_argument('--port', action='store', required=True, dest='port', help='port')
+    parser = argparse.ArgumentParser(description="A")
+    parser.add_argument('--port', action='store',required=True, dest='port', help='port')
 
     return parser.parse_args()
 
 def main():
     parser = _argparse()
-    ip = parser.ip
     port = int(parser.port)
 
-    connection_ip = ip
-    connection_port = port
-
+    server_port = port
     server_socket = socket(AF_INET, SOCK_STREAM)
-    server_socket.connect((connection_ip, connection_port))
+    server_socket.bind(('', server_port))
+    server_socket.listen()
 
     #serverSoc = socket(AF_INET, SOCK_STREAM)
     #serverSoc.bind(("",port))
@@ -73,3 +68,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
