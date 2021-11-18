@@ -3,13 +3,14 @@ from socket import *
 from tqdm import *
 import gzip
 import argparse
+import threading
 
 ip = "127.0.0.1"
 port = 20000
 ADDR = (ip, port)
-buffer_size = 20480
+buffer_size = 1024
 filename = "15mb.exe"
-filesize = os.path.getsize(filename)
+#filesize = os.path.getsize(filename)
 filepath = os.path.abspath(".\\share")
 
 def _argparse():
@@ -20,10 +21,17 @@ def _argparse():
     return parser.parse_args()
 
 def main():
-    client = socket(AF_INET, SOCK_STREAM)
-    client.connect(ADDR)
+    parser = _argparse()
+    ip = parser.ip
+    #port = int(parser.port)
 
-    orFile = open(filepath+filename, 'rb') #open original file
+    server_ip = ip
+    server_port = port
+
+    client_socket = socket(AF_INET, SOCK_STREAM)
+    client_socket.connect((server_ip, server_port))
+
+    orFile = open(filepath+'\\'+filename, 'rb') #open original file
     comFile = orFile.read() #read file to compress
     orFile.close()
 
@@ -31,9 +39,9 @@ def main():
         fc.write(comFile) #write compress file as filename.gz
     new_filesize = os.path.getsize(filename+'.gz')
     infoData = (f"{filename}@{new_filesize}@{filepath}")
-    client.send(infoData.encode())
+    client_socket.send(infoData.encode())
     print('Client sent file information')
-    msg = client.recv(buffer_size).decode()
+    msg = client_socket.recv(buffer_size).decode()
     print("SERVER: ",msg)
 
     bar = tqdm(range(new_filesize), ('Sending '+filename), unit="B", unit_scale=True, unit_divisor=buffer_size)
@@ -46,12 +54,12 @@ def main():
             if not bData:
                 break
 
-            client.send(bData)
+            client_socket.send(bData)
             #msg = client.recv(buffer_size).decode()
 
             bar.update(len(bData))
 
-    client.close()
+    client_socket.close()
     print('Client close/compressed file remove')
     os.remove(filename + '.gz')
 
