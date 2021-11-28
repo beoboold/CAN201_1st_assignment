@@ -5,6 +5,7 @@ import shutil
 import sys
 import threading
 import time
+import zipfile
 from socket import *
 from tqdm import *
 import argparse
@@ -164,10 +165,9 @@ def server_side():
                                             break
                                         connectSoc.send(send_bData)
                                         final_msg = connectSoc.recv(buffer_size).decode()
-                                        if not 'Archive' in final_msg:
-                                            print('Wrong folder compressed file sending -line160')
                                     print('Zip file transfer finished')
                                     os.remove(newpath)
+                                    time.sleep(20)
                             else:
                                 print('wrong step')
                     else:
@@ -289,30 +289,50 @@ def client_side():
                         newname = filename+'.zip'
                         arcpath = os.path.join(folderpath, newname)
                         print(f'C: New client Archive path is {arcpath}')
+
+                        maxpbktnum = int(filesize / buffer_size)
+                        print(f'max packet number is {maxpbktnum}')
+
                         with open(arcpath, 'wb') as a:
-                            while True:
+                            for i in range(0, maxpbktnum):
                                 recv_bData = client.recv(buffer_size)
                                 if not recv_bData:
                                     break
                                 a.write(recv_bData)
                                 client.send('Archive'.encode())
                                 bar.update(len(recv_bData))
-                        shutil.unpack_archive(arcpath,folderpath)
+                        filelist = os.listdir(folderpath)
+                        print(filelist)
+                        newsize = os.path.getsize(arcpath)
+                        print(newsize)
+                        unzippath = os.path.join(folderpath,filename)
+                        shutil.unpack_archive(f'{arcpath}',f'{unzippath}','zip')
+                        #with zipfile.ZipFile(arcpath, 'r') as cf:
+                        #    cf.extractall(unzippath)
                         print(f'Client decompressed {newname} in path {folderpath}')
+                        os.remove(arcpath)
 
                     elif 'F' in msg:#F=File
                         client.send('F'.encode())
                         print(f'Client receiving {filename} now file size is {filesize}')
                         filepath = os.path.join(folderpath, filename)
                         print(f'New client file path is {filepath}')
+
+                        maxpbktnum = int(filesize/buffer_size)
+                        print(f'max packet number is {maxpbktnum}')
+
                         with open(filepath, 'wb') as f:
-                            while True:
+                            for i in range(0,maxpbktnum):
                                 recv_bData = client.recv(buffer_size)
                                 if not recv_bData:
                                     break
                                 f.write(recv_bData)
                                 client.send('File'.encode())
                                 bar.update(len(recv_bData))
+                        filelist = os.listdir(folderpath)
+                        print(filelist)
+                        newsize = os.path.getsize(filepath)
+                        print(newsize)
                         print('Finished file receiving')
                 client.close()
 
