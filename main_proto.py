@@ -124,9 +124,7 @@ def server_side():
                     print(f'This is current files in folder {filelist}')
                     print(f'This is current client filelist {c_filelist}')
         elif 'R' in item[0]:#Server send data
-            print(f'Client :{item[1]}')
             for i in range(0, len(sendlist)):
-                print(f'Client: {item[1]}')
                 connectSoc.send(f'D@{len(sendlist)}'.encode())
                 response_msg = connectSoc.recv(buffer_size).decode()
                 if 'ACK' in response_msg:
@@ -135,25 +133,30 @@ def server_side():
                     filesize = os.path.getsize(getFsize)
                     print(f'File size is {filesize}')
                     connectSoc.send(f'{filename}@{filesize}'.encode())
-                    bar = tqdm(range(filesize), ('Sending ' + filename), unit="B", unit_scale=True,unit_divisor=buffer_size)
+                    #bar = tqdm(range(filesize), ('Sending ' + filename), unit="B", unit_scale=True,unit_divisor=buffer_size)
                     response_msg = connectSoc.recv(buffer_size).decode()
                     if 'ACK' in response_msg:
+                        print(f'Server start sending method to {clientAddr}')
+                        filepath = getFsize
+                        print(f'new server file path {filepath}')
                         with open(filepath, 'rb') as fid:
                             while True:
                                 send_bData = fid.read(buffer_size)
                                 if not send_bData:
-                                    print('Done')
                                     break
                                 connectSoc.send(send_bData)
-                                bar.update(len(send_bData))
+                                final_msg = connectSoc.recv(buffer_size).decode()
+                                if not 'ACK' in final_msg:
+                                    print('wrong with sending')
+                                #bar.update(len(send_bData))
                             print(f'Server sent {filename}')
+                            '''
                             final_msg = connectSoc.recv(buffer_size).decode()
                             if 'ACK' in final_msg:
                                 print(f'C: {final_msg}')
                             else:
                                 print('need to send again')
-                            ns_filelist = os.listdir(folderpath)
-                            print(f'S: {ns_filelist}')
+                            '''
 
 
 def client_side():
@@ -205,7 +208,7 @@ def client_side():
                     client.send(datainfo.encode())
                     print(f'Client sent file information of {filename}')
 
-                    bar = tqdm(range(filesize), ('Sending ' + filename), unit="B", unit_scale=True, unit_divisor=buffer_size)
+                    #bar = tqdm(range(filesize), ('Sending ' + filename), unit="B", unit_scale=True, unit_divisor=buffer_size)
                     print(f'Sending {filename} data')
                     recv_msg = client.recv(buffer_size).decode()
                     if 'ACK' in recv_msg:
@@ -215,7 +218,7 @@ def client_side():
                                 if not bData:
                                     break
                                 client.send(bData)
-                                bar.update(len(bData))
+                                #bar.update(len(bData))
                         client.close()
                         print(f'{filename} sent')
         elif 'S' in item[0]:#Server will give file(s)
@@ -236,20 +239,22 @@ def client_side():
                     filesize = int(info_item[1])
                     filepath = os.path.join(folderpath, filename)
 
-                    bar = tqdm(range(filesize),('C: Receiving ' +filename), unit="M",unit_scale=True,unit_divisor=buffer_size)
+                    bar = tqdm(range(filesize),('C: Receiving ' +filename), unit="B",unit_scale=True,unit_divisor=buffer_size)
                     client.send('ACK'.encode())
                     print(f'Client receiving {filename} now file size is {filesize}')
-                    with open(filepath, 'wb') as fid:
+                    filepath = os.path.join(folderpath, filename)
+                    print(f'New client file path is {filepath}')
+                    with open(filepath, 'wb') as f:
                         while True:
                             recv_bData = client.recv(buffer_size)
                             if not recv_bData:
                                 break
-                        fid.write(recv_bData)
-                        bar.update(recv_bData)
-                        client.send('ACK'.encode())
-                    nc_filelist = os.listdir(folderpath)
-                    print('C:'+nc_filelist)
-                client.close()
+                            f.write(recv_bData)
+                            client.send('ACK'.encode())
+                            bar.update(len(recv_bData))
+                    checksize = os.path.getsize(filepath)
+                    print(f'C: {checksize}')
+            client.close()
 
 
 def main():  # Using multiprocessing run two servers and client
